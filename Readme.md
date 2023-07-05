@@ -328,3 +328,531 @@ public class HyundaiFactory extends CarFactory {
 ![](image/img.png)
 
 - 상위 클래스에서 추상 팩토리 메서드를 제공하고 하위 클래스에서 이를 구현하여 구체 클래스를 생성한다. 따라서 클라이언트가 사용하게 되는 상위 메서드는 추상화되어 있고, 실제 객체가 생성되는 하위 클래스와 분리되어 유연성이 제공된다.
+
+# Abstract Factory Method
+
+## 디자인 원리
+
+- 서로 연관성이 있는 여러 인스턴스를 한꺼번에 생성하기 위한 팩토리 패턴
+- 추상화된 인터페이스를 팩토리에 제공하고 상황에 따라 그에 맞는 인스턴스들이 생성되도록 한다.
+  가령 데이터베이스에 따라 DAO 클래스가 달라져야 한다고 할 때, 현재 사용해야 하는 DB의 종류에 따른 DAO 인스턴스를 한꺼번에 생성하도록 한다.
+- 다양한 세트가 존재하고 이를 대체할 수 있도록 구현한 패턴
+
+## class diagram
+
+![](image/img_1.png)
+
+- 대체로 ConcreteFactory 인스턴스는 실행할 때 만들어짐
+- ConcreteFactory는 각 제품 세트를 생성함
+- Client는 AbstractFactory와 AbstractProduct 클래스에 선언된 인터페이스를 사용한다.
+
+*UserInfo.java*
+
+```java
+package abstractfactory.domain.userinfo;
+
+public class UserInfo {
+
+    private String userId;
+    private String userName;
+    private String password;
+
+    public String getUserId() {
+        return userId;
+    }
+
+    public void setUserId(String userId) {
+        this.userId = userId;
+    }
+
+    public String getUserName() {
+        return userName;
+    }
+
+    public void setUserName(String userName) {
+        this.userName = userName;
+    }
+
+    public String getPassword() {
+        return password;
+    }
+
+    public void setPassword(String password) {
+        this.password = password;
+    }
+}
+```
+
+→ `UserInfo` 도메인
+
+*UserInfoDao.java*
+
+```java
+package abstractfactory.domain.userinfo.dao;
+
+import abstractfactory.domain.userinfo.UserInfo;
+
+public interface UserInfoDao {
+
+    public void insertUserInfo(UserInfo userInfo);
+    public void deleteUserInfo(UserInfo userInfo);
+    public void updateUserInfo(UserInfo userInfo);
+
+}
+```
+
+→ DB 타입에 맞게 Dao가 변경되기 때문에 인터페이스로 생성
+
+*UserInfoMysqlDao.java*
+
+```java
+package abstractfactory.domain.userinfo.dao.mysql;
+
+import abstractfactory.domain.userinfo.UserInfo;
+import abstractfactory.domain.userinfo.dao.UserInfoDao;
+
+public class UserInfoMysqlDao implements UserInfoDao {
+
+    @Override
+    public void insertUserInfo(UserInfo userInfo) {
+        System.out.println("insert into MySQL DB userId = " + userInfo.getUserId());
+    }
+
+    @Override
+    public void deleteUserInfo(UserInfo userInfo) {
+        System.out.println("delete into MySQL DB userId = " + userInfo.getUserId());
+    }
+
+    @Override
+    public void updateUserInfo(UserInfo userInfo) {
+        System.out.println("update into MySQL DB userId = " + userInfo.getUserId());
+    }
+}
+```
+
+*UesrInfoOracleDao.java*
+
+```java
+package abstractfactory.domain.userinfo.dao.oracle;
+
+import abstractfactory.domain.userinfo.UserInfo;
+import abstractfactory.domain.userinfo.dao.UserInfoDao;
+
+public class UserInfoOracleDao implements UserInfoDao {
+
+    @Override
+    public void insertUserInfo(UserInfo userInfo) {
+        System.out.println("insert into ORACLE DB userId = " + userInfo.getUserId());
+    }
+
+    @Override
+    public void deleteUserInfo(UserInfo userInfo) {
+        System.out.println("delete into ORACLE DB userId = " + userInfo.getUserId());
+    }
+
+    @Override
+    public void updateUserInfo(UserInfo userInfo) {
+        System.out.println("update into ORACLE DB userId = " + userInfo.getUserId());
+    }
+}
+```
+
+*Product.java*
+
+```java
+package abstractfactory.domain.product;
+
+public class Product {
+
+    private String productId;
+    private String productName;
+
+    public String getProductId() {
+        return productId;
+    }
+
+    public void setProductId(String productId) {
+        this.productId = productId;
+    }
+
+    public String getProductName() {
+        return productName;
+    }
+
+    public void setProductName(String productName) {
+        this.productName = productName;
+    }
+}
+```
+
+*ProductDao.java*
+
+```java
+package abstractfactory.domain.product.dao;
+
+import abstractfactory.domain.product.Product;
+
+public interface ProductDao {
+
+    public void insertProduct(Product product);
+    public void deleteProduct(Product product);
+    public void updateProduct(Product product);
+
+}
+```
+
+*ProductMysqlDao.java*
+
+```java
+package abstractfactory.domain.product.dao.mysql;
+
+import abstractfactory.domain.product.Product;
+import abstractfactory.domain.product.dao.ProductDao;
+
+public class ProductMysqlDao implements ProductDao {
+
+    @Override
+    public void insertProduct(Product product) {
+        System.out.println("insert into MySQL DB userId = " + product.getProductId());
+    }
+
+    @Override
+    public void deleteProduct(Product product) {
+        System.out.println("delete into MySQL DB userId = " + product.getProductId());
+    }
+
+    @Override
+    public void updateProduct(Product product) {
+        System.out.println("update into MySQL DB userId = " + product.getProductId());
+    }
+}
+```
+
+*ProductOracleDao.java*
+
+```java
+package abstractfactory.domain.product.dao.oracle;
+
+import abstractfactory.domain.product.Product;
+import abstractfactory.domain.product.dao.ProductDao;
+
+public class ProductOracleDao implements ProductDao {
+
+    @Override
+    public void insertProduct(Product product) {
+        System.out.println("insert into ORACLE DB userId = " + product.getProductId());
+    }
+
+    @Override
+    public void deleteProduct(Product product) {
+        System.out.println("delete into ORACLE DB userId = " + product.getProductId());
+    }
+
+    @Override
+    public void updateProduct(Product product) {
+        System.out.println("update into ORACLE DB userId = " + product.getProductId());
+    }
+}
+```
+
+*DaoFactory.java*
+
+```java
+package abstractfactory.factory;
+
+import abstractfactory.domain.product.dao.ProductDao;
+import abstractfactory.domain.userinfo.dao.UserInfoDao;
+
+public abstract class DaoFactory {
+
+    public abstract UserInfoDao createUserInfoDao();
+    public abstract ProductDao createProductDao();
+}
+```
+
+→ 추상 클래스로 생성하여 DB 타입에 맞게 Dao 인스턴스를 생성하도록 메소드만 선언
+
+*MysqlDaoFactory.java*
+
+```java
+package abstractfactory.factory;
+
+import abstractfactory.domain.product.dao.ProductDao;
+import abstractfactory.domain.product.dao.mysql.ProductMysqlDao;
+import abstractfactory.domain.userinfo.dao.UserInfoDao;
+import abstractfactory.domain.userinfo.dao.mysql.UserInfoMysqlDao;
+
+public class MySqlDaoFactory extends DaoFactory {
+
+    @Override
+    public UserInfoDao createUserInfoDao() {
+        return new UserInfoMysqlDao();
+    }
+
+    @Override
+    public ProductDao createProductDao() {
+        return new ProductMysqlDao();
+    }
+}
+```
+
+*OracleDaoFactory.java*
+
+```java
+package abstractfactory.factory;
+
+import abstractfactory.domain.product.dao.ProductDao;
+import abstractfactory.domain.product.dao.oracle.ProductOracleDao;
+import abstractfactory.domain.userinfo.dao.UserInfoDao;
+import abstractfactory.domain.userinfo.dao.oracle.UserInfoOracleDao;
+
+public class OracleDaoFactory extends DaoFactory {
+
+    @Override
+    public UserInfoDao createUserInfoDao() {
+        return new UserInfoOracleDao();
+    }
+
+    @Override
+    public ProductDao createProductDao() {
+        return new ProductOracleDao();
+    }
+}
+```
+
+*db.properties*
+
+```
+DB_TYPE=ORACLE
+```
+
+*UserInfoClient.java*
+
+```java
+package abstractfactory.client;
+
+import abstractfactory.domain.product.Product;
+import abstractfactory.domain.product.dao.ProductDao;
+import abstractfactory.domain.userinfo.UserInfo;
+import abstractfactory.domain.userinfo.dao.UserInfoDao;
+import abstractfactory.factory.DaoFactory;
+import abstractfactory.factory.MySqlDaoFactory;
+import abstractfactory.factory.OracleDaoFactory;
+
+import java.io.FileInputStream;
+import java.io.IOException;
+import java.util.Properties;
+
+public class UserInfoClient {
+
+    public static void main(String[] args) throws IOException {
+        FileInputStream fis =
+                new FileInputStream(
+                        "C:\\Users\\ehdwn\\study\\DesignPattern\\src\\main\\resources\\db.properties"
+                );
+        Properties prop = new Properties();
+        prop.load(fis);
+
+        String dbType = prop.getProperty("DB_TYPE");
+
+        UserInfo userInfo = new UserInfo();
+        userInfo.setUserId("12345");
+        userInfo.setPassword("!@#$%");
+        userInfo.setUserName("테스트");
+
+        Product product = new Product();
+        product.setProductId("0011AA");
+        product.setProductName("TV");
+
+        DaoFactory daoFactory = null;
+        UserInfoDao userInfoDao = null;
+        ProductDao productDao = null;
+
+        if (dbType.equals("ORACLE")) {
+            daoFactory = new OracleDaoFactory();
+        } else if (dbType.equals("MYSQL")) {
+            daoFactory = new MySqlDaoFactory();
+        } else {
+            System.out.println("db support error");
+            return;
+        }
+
+        userInfoDao = daoFactory.createUserInfoDao();
+        productDao = daoFactory.createProductDao();
+
+        System.out.println("==USERINFO TRANSACTION==");
+        userInfoDao.insertUserInfo(userInfo);
+        userInfoDao.deleteUserInfo(userInfo);
+        userInfoDao.updateUserInfo(userInfo);
+
+        System.out.println("==PRODUCT TRANSACTION==");
+        productDao.insertProduct(product);
+        productDao.deleteProduct(product);
+        productDao.updateProduct(product);
+    }
+}
+```
+
+*결과*
+
+```
+==USERINFO TRANSACTION==
+insert into ORACLE DB userId = 12345
+delete into ORACLE DB userId = 12345
+update into ORACLE DB userId = 12345
+==PRODUCT TRANSACTION==
+insert into ORACLE DB userId = 0011AA
+delete into ORACLE DB userId = 0011AA
+update into ORACLE DB userId = 0011AA
+```
+
+> 이렇게 코드를 작성하면 이후에 DB가 추가되었을 때 Dao 세트와 Factory만 추가해주면 클라이언트 코드에서는 수정할 게 없다.
+
+# Singleton
+
+## 디자인 원리
+
+- 클래스의 인스턴스가 오직 하나만이 존재해야 하고, 이에 대한 접근도 동일한 인터페이스를 통해 가능
+- 인스턴스가 여러 개가 되면 오류가 생길 수 있고, 불필요한 자원들이 생성되고, 일관성이 없어지는 일이 발생하는 경우 (Calendar, Logger, Connection poll, 레지스트리 설정, 학교 등등…)
+- 전역 변수를 쓰는 것은 안 좋은 프로그래밍 방법
+- 자바에서는 static 키워드를 활용함
+
+## **간단한 Singleton 예제 : 게으른 인스턴스 생성 (lazyinstantiation)**
+
+*Singleton.java*
+
+```java
+package singleton;
+
+public class Singleton {
+
+    private static Singleton instance;
+
+    private Singleton() {
+
+    }
+
+    public static Singleton getInstance() {
+        if (instance == null) {
+            instance = new Singleton();
+        }
+        return instance;
+    }
+}
+```
+
+*SingletonTest.java*
+
+```java
+package singleton;
+
+import java.util.Calendar;
+
+public class SingletonTest {
+
+    public static void main(String[] args) {
+
+        Singleton singletonA = Singleton.getInstance();
+        Singleton singletonB = Singleton.getInstance();
+
+        if (singletonA == singletonB) {
+            System.out.println("true");
+        } else {
+            System.out.println("false");
+        }
+
+        Calendar calendar = Calendar.getInstance();
+    }
+}
+```
+
+*결과*
+
+```
+true
+```
+
+## **multi-thread 에서는 Singleton 패턴에서도 두 개의 인스턴스가 생성될 수 있음**
+
+- 두 thread 모두 instance == null 에서 switch가 발생하면 두 개의 instance가 생성됨
+- thread-safe를 보장하는 코드
+
+**해결 방법**
+
+### 1. 동기화 방식
+
+*Singleton.java*
+
+```java
+package singleton;
+
+public class Singleton {
+
+    private static Singleton instance;
+
+    private Singleton() {
+
+    }
+
+    public static synchronized Singleton getInstance() {
+        if (instance == null) {
+            instance = new Singleton();
+        }
+        return instance;
+    }
+}
+```
+
+→ 매번 동기화에 대한 overhead 가 발생할 수 있음
+
+### 2. 인스턴스를 처음부터 생성
+
+*Singleton.java*
+
+```java
+package singleton;
+
+public class Singleton {
+
+    private static Singleton instance = new Singleton();
+
+    private Singleton() {
+
+    }
+
+    public static Singleton getInstance() {
+        return instance;
+    }
+}
+```
+
+→ 인스턴스를 사용하는 시점에 생성하는 것보다는 overhead 가능성이 낮다.
+
+### 3. DCL (Double-Checked Locking) 방법
+
+*Singleton.java*
+
+```java
+package singleton;
+
+public class Singleton {
+
+    private static Singleton instance;
+
+    private Singleton() {
+
+    }
+
+    public static Singleton getInstance() {
+        
+        if (instance == null) {
+            synchronized (Singleton.class) {
+                instance = new Singleton();
+            }
+        }
+        return instance;
+    }
+}
+```
+
+→ instance가 null일 때만 동기화를 하므로 overhead 가능성이 적다.
