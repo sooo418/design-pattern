@@ -1122,3 +1122,316 @@ Kim 학생의 총점은 210점 입니다.
 학생 Kim의 수학 과목 성적은 55점 이고, 학점은 D 입니다.
 학생 Kim의 영어 과목 성적은 100점 이고, 학점은 A 입니다.
 ```
+
+# Bridge
+
+## 디자인 원리
+
+- 기능(추상)의 계층과 구현의 계층을 분리하여 독립적으로 확장하도록 한다.
+  - 기능 → 추상, 개념
+- 하나의 기능에 대한 다양한 구현이 적용될 수 있다.
+- 기능과 구현부가 혼재하면 상속 관계가 복잡해진다
+  - 기능적인 부분도 상속이 일어날 수 있다.
+  - 구현한 부분도 계층 구조가 일어날 수 있다.
+  - 기능적인 부분에서도 확장이 일어나고 구현한 부분에서도 확장이 일어나 구분이 잘 되지 않는다.
+- **분리하고 기능이 구현에 대한 참조를 가지게 하여 실제 구현을 선택할 수 있다. - Bridge**
+  - Bridge 패턴은 개념적인 부분의 확장, 구현적인 부분의 확장을 구분하여 따로 두고 실제적인 implementation은 기능 쪽에서 가지고 있게 하는 방식이다.
+- 기능과 구현을 분리함으로써 낮은 결합도를 가지고, 기능이 구현에 종속되지 않는다.
+- 실행 중에 구현부를 선택할 수 있고, 구현이 변경되더라도 기능에 대한 재컴파일이 필요 없다.
+- 클라이언트는 기능 인터페이스를 사용하므로 구현에 대한 부분은 숨길 수 있다.
+
+## 클래스 다이어그램
+
+![Untitled](https://s3-us-west-2.amazonaws.com/secure.notion-static.com/8d820356-a237-4580-ba7c-9dffbf687cdb/Untitled.png)
+
+## 프로그램 예제
+
+- List는 선형 자료의 추상적인 개념이고, List 하위에 Stack 과 Queue라는 추상적인 개념이 추가 될 수 있음
+- 실제 List는 Array와 LinkedList로 구현될 수 있음
+- 따라서 하나의 Stack이라는 기능은 Array, LinkedList로 구현 가능함
+- Bridge 패턴을 활용해보자
+
+*List.java(기능)*
+
+```java
+package bridge.list;
+
+import bridge.impl.AbstractList;
+
+public class List<T> {
+    AbstractList<T> impl;
+
+    public List(AbstractList<T> list) {
+        this.impl = list;
+    }
+
+    public void add(T obj) {
+        impl.addElement(obj);
+    }
+
+    public T get(int i) {
+        return impl.getElement(i);
+    }
+
+    public T remove(int i) {
+        return impl.deleteElement(i);
+    }
+
+    public int getSize() {
+        return impl.getElementSize();
+    }
+}
+```
+
+*AbstractList.java(구현)*
+
+```java
+package bridge.impl;
+
+public interface AbstractList<T> {
+
+    void addElement(T obj);
+
+    T deleteElement(int i);
+
+    T getElement(int i);
+
+    public int insertElement(T obj, int i);
+
+    public int getElementSize();
+}
+```
+
+*Stack.java(기능)*
+
+```java
+package bridge.list;
+
+import bridge.impl.AbstractList;
+
+public class Stack<T> extends List<T> {
+
+    public Stack(AbstractList<T> list) {
+        super(list);
+        System.out.println("Stack을 만듭니다.");
+    }
+
+    public void push(T obj) {
+        impl.insertElement(obj, 0);
+    }
+
+    public T pop() {
+        return impl.deleteElement(0);
+    }
+
+    public T peek() {
+        return impl.getElement(0);
+    }
+}
+```
+
+*Queue.java(기능)*
+
+```java
+package bridge.list;
+
+import bridge.impl.AbstractList;
+
+public class Queue<T> extends List<T> {
+
+    public Queue(AbstractList<T> list) {
+        super(list);
+        System.out.println("Queue를 만듭니다.");
+    }
+
+    public void enQueue(T obj) {
+        impl.addElement(obj);
+    }
+
+    public T deQueue() {
+        return impl.deleteElement(0);
+    }
+}
+```
+
+*ArrayImpl.java(구현)*
+
+```java
+package bridge.impl;
+
+import bridge.impl.AbstractList;
+
+import java.util.ArrayList;
+
+public class ArrayImpl<T> implements AbstractList<T> {
+
+    ArrayList<T> array;
+
+    public ArrayImpl() {
+        array = new ArrayList<>();
+        System.out.println("Array로 만듭니다.");
+    }
+
+    @Override
+    public void addElement(T obj) {
+        array.add(obj);
+    }
+
+    @Override
+    public T deleteElement(int i) {
+        return array.remove(i);
+    }
+
+    @Override
+    public T getElement(int i) {
+        return array.get(i);
+    }
+
+    @Override
+    public int insertElement(T obj, int i) {
+        array.add(i, obj);
+        return i;
+    }
+
+    @Override
+    public int getElementSize() {
+        return array.size();
+    }
+}
+```
+
+*LinkedListImpl.java(구현)*
+
+```java
+package bridge.impl;
+
+import bridge.impl.AbstractList;
+
+import java.util.LinkedList;
+
+public class LinkedListImpl<T> implements AbstractList<T> {
+
+    LinkedList<T> linkedList;
+
+    public LinkedListImpl() {
+        linkedList = new LinkedList<>();
+        System.out.println("LinkedList로 만듭니다.");
+    }
+
+    @Override
+    public void addElement(T obj) {
+        linkedList.add(obj);
+    }
+
+    @Override
+    public T deleteElement(int i) {
+        return linkedList.remove(i);
+    }
+
+    @Override
+    public T getElement(int i) {
+        return linkedList.get(i);
+    }
+
+    @Override
+    public int insertElement(T obj, int i) {
+        linkedList.add(i, obj);
+        return i;
+    }
+
+    @Override
+    public int getElementSize() {
+        return linkedList.size();
+    }
+}
+```
+
+*ListTest.java(테스트)*
+
+```java
+package bridge.test;
+
+import bridge.impl.ArrayImpl;
+import bridge.impl.LinkedListImpl;
+import bridge.list.Queue;
+import bridge.list.Stack;
+
+public class ListTest {
+    public static void main(String[] args) {
+
+        Queue<String> arrayQueue = new Queue<>(new ArrayImpl<>());
+
+        arrayQueue.enQueue("aaa");
+        arrayQueue.enQueue("bbb");
+        arrayQueue.enQueue("ccc");
+
+        System.out.println(arrayQueue.deQueue());
+        System.out.println(arrayQueue.deQueue());
+        System.out.println(arrayQueue.deQueue());
+        System.out.println("===========================");
+
+        Queue<String> linkedQueue = new Queue<>(new LinkedListImpl<>());
+
+        linkedQueue.enQueue("aaa");
+        linkedQueue.enQueue("bbb");
+        linkedQueue.enQueue("ccc");
+
+        System.out.println(linkedQueue.deQueue());
+        System.out.println(linkedQueue.deQueue());
+        System.out.println(linkedQueue.deQueue());
+        System.out.println("===========================");
+
+        Stack<String> arrayStack = new Stack<>(new ArrayImpl<>());
+
+        arrayStack.push("aaa");
+        arrayStack.push("bbb");
+        arrayStack.push("ccc");
+
+        System.out.println(arrayStack.pop());
+        System.out.println(arrayStack.pop());
+        System.out.println(arrayStack.pop());
+        System.out.println("===========================");
+
+        Stack<String> stackLinkedList = new Stack<>(new LinkedListImpl<>());
+
+        stackLinkedList.push("aaa");
+        stackLinkedList.push("bbb");
+        stackLinkedList.push("ccc");
+
+        System.out.println(stackLinkedList.pop());
+        System.out.println(stackLinkedList.pop());
+        System.out.println(stackLinkedList.pop());
+        System.out.println("===========================");
+
+    }
+}
+```
+
+*결과*
+
+```
+Array로 만듭니다.
+Queue를 만듭니다.
+aaa
+bbb
+ccc
+===========================
+LinkedList로 만듭니다.
+Queue를 만듭니다.
+aaa
+bbb
+ccc
+===========================
+Array로 만듭니다.
+Stack을 만듭니다.
+ccc
+bbb
+aaa
+===========================
+LinkedList로 만듭니다.
+Stack을 만듭니다.
+ccc
+bbb
+aaa
+===========================
+```
