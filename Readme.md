@@ -1435,3 +1435,315 @@ bbb
 aaa
 ===========================
 ```
+
+# Template Method
+
+## 디자인 원리
+
+- “변화하는 것과 변화하지 않는 것을 분리하고 다양하게 구현되는 것은 하위 클래스에 위임한다”
+  - Open-Closed Principle
+- 유사한 여러 클래스에 공통적인 부분을 추출하여 상위 클래스에 구현하고 그렇지 않고 다양하게 구현될 수 있는 부분은 추상 메서드로 선언하여 하위 클래스에 위임한다.
+- 알고리즘의 골격을 구현한다. 프레임워크에서 많이 사용되는 패턴이다.
+
+## 이전 코드
+
+- 세 가지 종류의 자동차는 동작 방식은 다르지만 동일한 과정의 순서로 이동한다.
+
+*AICar.java*
+
+```java
+package template.before;
+
+public class AICar {
+
+    public void startCar() {
+        System.out.println("시동을 켭니다.");
+    }
+
+    public void turnOff() {
+        System.out.println("시동을 끕니다.");
+    }
+
+    public void drive() {
+        System.out.println("자율 주행합니다.");
+        System.out.println("자동차가 스스로 방얗을 바꿉니다.");
+    }
+
+    public void stop() {
+        System.out.println("스스로 멈춥니다.");
+    }
+}
+```
+
+*ManualCar.java*
+
+```java
+package template.before;
+
+public class ManualCar {
+
+    public void startCar() {
+        System.out.println("시동을 켭니다.");
+    }
+
+    public void turnOff() {
+        System.out.println("시동을 끕니다.");
+    }
+
+    public void drive() {
+        System.out.println("사람이 운전합니다.");
+        System.out.println("사람이 핸들을 조작합니다.");
+    }
+
+    public void stop() {
+        System.out.println("브레이크를 밟아서 정지합니다.");
+    }
+}
+```
+
+*HybridCar.java*
+
+```java
+package template.before;
+
+public class HybridCar {
+
+    public void startCar() {
+        System.out.println("시동을 켭니다.");
+    }
+
+    public void turnOff() {
+        System.out.println("시동을 끕니다.");
+    }
+
+    public void drive() {
+        System.out.println("사람이 조작하거나 자율 주행을 합니다.");
+        System.out.println("사람이 핸들로 방향을 바꾸거나 자동으로 바뀝니다.");
+    }
+
+    public void stop() {
+        System.out.println("스스로 멈추거나 사람이 브레이크를 밟습니다.");
+    }
+}
+```
+
+*CarTest.java*
+
+```java
+package template.before;
+
+public class CarTest {
+
+    public static void main(String[] args) {
+
+        AICar myCar = new AICar();
+        myCar.startCar();
+        myCar.drive();
+        myCar.stop();
+        myCar.turnOff();
+        System.out.println("*****************************");
+
+        ManualCar herCar = new ManualCar();
+        herCar.startCar();
+        herCar.drive();
+        herCar.stop();
+        herCar.turnOff();
+        System.out.println("*****************************");
+
+        HybridCar yourCar = new HybridCar();
+        yourCar.startCar();
+        yourCar.drive();
+        yourCar.stop();
+        yourCar.turnOff();
+        System.out.println("*****************************");
+    }
+}
+```
+
+## Template Method를 활용한 리팩토링 코드
+
+1. 추상 클래스 만들기
+  1. 공통적으로 사용하는 메서드는 구현하고, 하위 클래스마다 다르게 구현되어야 하는 것은 추상 메서드로 선언
+
+*Car.java*
+
+```java
+package template.after;
+
+public abstract class Car {
+
+    public void startCar() {
+        System.out.println("시동을 켭니다.");
+    }
+
+    public void turnOff() {
+        System.out.println("시동을 끕니다.");
+    }
+
+    public abstract void drive();
+
+    public abstract void stop()
+}
+```
+
+1. Car를 상속 받아 각 차 클래스 구현하기
+
+*AICar.java*
+
+```java
+package template.after;
+
+public class AICar extends Car {
+
+    public void drive() {
+        System.out.println("자율 주행합니다.");
+        System.out.println("자동차가 스스로 방얗을 바꿉니다.");
+    }
+
+    public void stop() {
+        System.out.println("스스로 멈춥니다.");
+    }
+}
+```
+
+*ManualCar.java*
+
+```java
+package template.after;
+
+public class ManualCar extends Car {
+
+    public void drive() {
+        System.out.println("사람이 운전합니다.");
+        System.out.println("사람이 핸들을 조작합니다.");
+    }
+
+    public void stop() {
+        System.out.println("브레이크를 밟아서 정지합니다.");
+    }
+}
+```
+
+*HybridCar.java*
+
+```java
+package template.after;
+
+public class HybridCar extends Car {
+
+    public void drive() {
+        System.out.println("사람이 조작하거나 자율 주행을 합니다.");
+        System.out.println("사람이 핸들로 방향을 바꾸거나 자동으로 바뀝니다.");
+    }
+
+    public void stop() {
+        System.out.println("스스로 멈추거나 사람이 브레이크를 밟습니다.");
+    }
+}
+```
+
+1. 전체 시나리오를 구현한 템플릿 메서드 만들기
+
+*Car.java*
+
+```java
+// 하위 클래스에서 재정의하지 말아야 하기 때문에 final 사용
+final public void run() {
+    startCar();
+    drive();
+    stop();
+    turnOff();
+    washCar();
+}
+```
+
+1. 테스트 프로그램
+
+*CarTest.java*
+
+```java
+package template.after;
+
+public class CarTest {
+
+    public static void main(String[] args) {
+
+        AICar myCar = new AICar();
+        myCar.run();
+        System.out.println("*****************************");
+
+        ManualCar herCar = new ManualCar();
+        herCar.run();
+        System.out.println("*****************************");
+
+        HybridCar yourCar = new HybridCar();
+        yourCar.run();
+        System.out.println("*****************************");
+    }
+}
+```
+
+*결과*
+
+```
+시동을 켭니다.
+자율 주행합니다.
+자동차가 스스로 방얗을 바꿉니다.
+스스로 멈춥니다.
+시동을 끕니다.
+*****************************
+시동을 켭니다.
+사람이 운전합니다.
+사람이 핸들을 조작합니다.
+브레이크를 밟아서 정지합니다.
+시동을 끕니다.
+*****************************
+시동을 켭니다.
+사람이 조작하거나 자율 주행을 합니다.
+사람이 핸들로 방향을 바꾸거나 자동으로 바뀝니다.
+스스로 멈추거나 사람이 브레이크를 밟습니다.
+시동을 끕니다.
+*****************************
+```
+
+1. Hook 메서드 추가하기
+
+*Car.java*
+
+```java
+// 구현하고 싶지 않을 경우 아래와 같이 사용 - hook method 라고 한다.
+public void washCar() {}
+```
+
+*AICar.java*
+
+```java
+// 하위 클래스에서 구현하여 사용 가능.
+public void washCar() {
+    System.out.println("자동으로 세차가 됩니다.");
+}
+```
+
+*결과*
+
+```
+시동을 켭니다.
+자율 주행합니다.
+자동차가 스스로 방얗을 바꿉니다.
+스스로 멈춥니다.
+시동을 끕니다.
+자동으로 세차가 됩니다.
+*****************************
+시동을 켭니다.
+사람이 운전합니다.
+사람이 핸들을 조작합니다.
+브레이크를 밟아서 정지합니다.
+시동을 끕니다.
+*****************************
+시동을 켭니다.
+사람이 조작하거나 자율 주행을 합니다.
+사람이 핸들로 방향을 바꾸거나 자동으로 바뀝니다.
+스스로 멈추거나 사람이 브레이크를 밟습니다.
+시동을 끕니다.
+*****************************
+```
