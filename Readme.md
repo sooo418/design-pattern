@@ -1747,3 +1747,190 @@ public void washCar() {
 시동을 끕니다.
 *****************************
 ```
+
+# Decorator
+
+## 디자인 원리
+
+OOP에서 상속은 일반적으로 상위 클래스는 기본적인 클래스이며 하위 클래스는 구체적인 클래스이다.
+
+**구체적인 클래스 즉, 기능이 많아지면 많아질수록 하위 클래스들이 생성되는데 이런 현상이 일어나지 않도록 해주는 패턴이 Decorator 패턴이다.**
+
+- 상속을 하지 않고도 확장성 있게 클래스를 설계
+- 상속은 클래스간의 종속성이 높아짐 : 상위 클래스의 변경이 하위 클래스에 영향을 줌
+- 기존의 코드를 변경하지 않고 확장으로 새로운 기능을 추가하자
+  **OCP (Open-Closed Principle)**
+  **클래스는 확장에는 열려 있어야 하지만 변경에는 닫혀 있어야 한다.**
+
+## Class Diagram
+
+![](image/img_3.png)
+
+## 객체간의 협력
+
+- Component : 동적으로 추가할 서비스를 가질 수 있는 객체 정의
+- ConcreteComponent : 추가적인 서비스가 필요한 실제 객체
+- Decorator : Component의 참조자를 관리하면서 Component에 정의된 인터페이스를 만족하도록 정의
+- ConcreteDecorator : 새롭게 추가되는 서비스를 실제 구현한 클래스로 addBehavior()를 구현한다.
+
+Decorator 패턴에서는 Component와 Decorator를 동일하게 사용할 수 있지만, 실제 기능을 제공하는 것은 Component임
+
+## 예제
+
+다양한 커피를 만들어 보자. 커피에 부가적인 기능이 추가된 커피를 만들기 위해 상속을 사용하지 않고 장식자들을 추가한다.
+
+*Coffee.java*
+
+```java
+package decorator;
+
+public abstract class Coffee {
+
+    public abstract void brewing();
+}
+```
+
+*EthiopiaAmericano.java*
+
+```java
+package decorator;
+
+public class EthiopiaAmericano extends Coffee {
+
+    @Override
+    public void brewing() {
+        System.out.print("EthiopiaAmericano ");
+    }
+}
+```
+
+*KenyaAmericano.java*
+
+```java
+package decorator;
+
+public class KenyaAmericano extends Coffee {
+    @Override
+    public void brewing() {
+        System.out.print("KenyaAmericano ");
+    }
+}
+```
+
+*Decorator.java*
+
+```java
+package decorator;
+
+public abstract class Decorator extends Coffee {
+
+    Coffee coffee;
+
+    public Decorator(Coffee coffee) {
+        this.coffee = coffee;
+    }
+
+    @Override
+    public void brewing() {
+        coffee.brewing();
+    }
+}
+```
+
+- abstract 클래스는 아니지만 혼자서 기능을 제공하는 클래스가 아니고 다른 Decorator 들을 상속받기 위해서 구현했기 때문에 abstract 클래스로 정의한다.
+
+*Latte.java*
+
+```java
+package decorator;
+
+public class Latte extends Decorator {
+
+    public Latte(Coffee coffee) {
+        super(coffee);
+    }
+
+    @Override
+    public void brewing() {
+        super.brewing();
+        System.out.print("Adding Milk ");
+    }
+}
+```
+
+*Mocha.java*
+
+```java
+package decorator;
+
+public class Mocha extends Decorator {
+
+    public Mocha(Coffee coffee) {
+        super(coffee);
+    }
+
+    @Override
+    public void brewing() {
+        super.brewing();
+        System.out.print("Adding Mocha syrup ");
+    }
+}
+```
+
+*CoffeeTest.java*
+
+```java
+package decorator;
+
+public class CoffeeTest {
+
+    public static void main(String[] args) {
+
+        Coffee ethiopiaAmericano = new EthiopiaAmericano();
+        ethiopiaAmericano.brewing();
+
+        System.out.println();
+
+        Coffee ethiopiaLatte = new Latte(ethiopiaAmericano);
+        ethiopiaLatte.brewing();
+
+        System.out.println();
+
+        Coffee ethiopiaMochaLatte = new Mocha(new Latte(ethiopiaAmericano));
+        ethiopiaMochaLatte.brewing();
+
+        System.out.println();
+
+        Coffee kenyaMochaLatte = new Mocha(new Latte(new KenyaAmericano()));
+        kenyaMochaLatte.brewing();
+
+    }
+}
+```
+
+*결과*
+
+```
+EthiopiaAmericano 
+EthiopiaAmericano Adding Milk 
+EthiopiaAmericano Adding Milk Adding Mocha syrup 
+KenyaAmericano Adding Milk Adding Mocha syrup
+```
+
+## Java I/O
+
+- 많은 클래스들이 제공되고 있음
+- 실제 I/O 가 일어나는 클래스와 이를 감싸서 보조적인 기능을 제공하는 클래스 (보조 클래스, 이차 클래스, Wrapper 클래스)가 있음
+- 예 )
+  보조 클래스
+
+```java
+BufferedReader br2 = new BufferedReader(new InputStreamReader(System.in));
+```
+
+## 언제 사용하는 것이 좋은가?
+
+- **Decorator의 조합을 통해 새로운 서비스를 지속적으로 추가할 수 있음**
+- 단순한 상속보다 설계의 융통성이 많아짐
+- 필요없는 경우 Decorator를 삭제할 수 있음
+- Decorator와 실제 컴포넌트는 동일한 것이 아님
