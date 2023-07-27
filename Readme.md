@@ -2422,3 +2422,293 @@ Super level 입니다.
 아주 높이 Jump 합니다.
 한 바퀴 돕니다.
 ```
+
+# Observer
+
+## 디자인 원리
+
+- “상호 작용하는 객체 사이에는 가능하면 느슨한 결합(Loose coupling)을 사용해야 한다”
+- 객체 사이에 일대 다의 의존관계가 있고, 어떤 객체의 상태가 변화하면 그 객체에 의존성을 가진 다른 객체들에게 변화를 통지(notify or update)하여 자동으로 갱신되게 한다.
+- data(날씨, 통계)와 이것을 보여주는 여러 개의 view(그래프, 대시보드)
+- Log의 내용을 기록하는 Handler가 파일, 콘솔 등 여러 개일때
+- 이때 중요한 건 그 변화에 관심이 있는 객체가 몇 개인지는 상관 없이 통보될 수 있도록 구현해야 한다.
+- 변화하는 데이터 객체는 Subject, 이를 모니터링 하는 객체들은 Observer라고 한다.
+- Subject와 Observer를 분리하여 구현하면 Observer의 추가, 삭제, 변경 등이 용이하다.
+- 데이터는 Subject가 Push할 수도 있고, Observer에서 Pull할 수도 있다.
+
+## Class diagram
+
+![](image/img_6.png)
+
+- Subject와 Observer 사이에는 추상적인 결합만이 존재한다.
+- broadcasting 방식
+
+## Random으로 숫자가 만들어지면 그 숫자를 쓰거나 개수만큼 *로 나타낸다.
+
+- 숫자(Subject)를 모니터링 하는 두 개의 Observer가 존재함
+
+*NumberGenerator.java*
+
+```java
+package observer;
+
+import java.util.ArrayList;
+import java.util.Iterator;
+import java.util.List;
+
+public abstract class NumberGenerator {
+
+    private List<Observer> observers = new ArrayList<>();
+
+    public void addObserver(Observer observer) {
+        observers.add(observer);
+    }
+
+    public boolean deleteObserver(Observer observer) {
+        return observers.remove(observer);
+    }
+
+    public void notifyObserver() {
+        Iterator<Observer> ir = observers.iterator();
+
+        while (ir.hasNext()) {
+            Observer observer = ir.next();
+            observer.update(this);
+        }
+    }
+
+    public abstract int getNumber();
+    public abstract void execute();
+}
+```
+
+*Observer.java*
+
+```java
+package observer;
+
+public abstract class Observer {
+
+    public abstract void update(NumberGenerator numberGenerator);
+
+}
+```
+
+*DigitObserver.java*
+
+```java
+package observer;
+
+public class DigitObserver extends Observer {
+
+    @Override
+    public void update(NumberGenerator numberGenerator) {
+        System.out.println("DigitObserver:" + numberGenerator.getNumber());
+
+        try {
+            Thread.sleep(100);
+        } catch (InterruptedException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+}
+```
+
+*GraphObserver.java*
+
+```java
+package observer;
+
+public class GraphObserver extends Observer {
+
+    @Override
+    public void update(NumberGenerator numberGenerator) {
+        System.out.print("GraphObserver:");
+        int count = numberGenerator.getNumber();
+        for (int i = 0; i < count; i++) {
+            System.out.print("*");
+        }
+        System.out.println("");
+        try {
+            Thread.sleep(100);
+        } catch (InterruptedException e) {
+            throw new RuntimeException(e);
+        }
+    }
+}
+```
+
+*RandomNumberGenerator.java*
+
+```java
+package observer;
+
+import java.util.Random;
+
+public class RandomNumberGenerator extends NumberGenerator {
+
+    private Random random = new Random();
+    private int number;
+
+    public int getNumber() {
+        return number;
+    }
+
+    @Override
+    public void execute() {
+        for (int i = 0; i < 20; i++) {
+            number = random.nextInt(50);
+            notifyObserver();
+        }
+    }
+}
+```
+
+*OddNumberGenerator.java*
+
+```java
+package observer;
+
+public class OddNumberGenerator extends NumberGenerator {
+
+    int oddNumber = 1;
+
+    @Override
+    public int getNumber() {
+        return oddNumber;
+    }
+
+    @Override
+    public void execute() {
+
+        for (int i = 1; i < 50; i+=2) {
+            oddNumber = i;
+            notifyObserver();
+        }
+    }
+}
+```
+
+*ObserverTest.java*
+
+```java
+package observer;
+
+public class ObserverTest {
+
+    public static void main(String[] args) {
+
+        NumberGenerator numberGenerator = new RandomNumberGenerator();
+        Observer digitObserver = new DigitObserver();
+        Observer graphObserver = new GraphObserver();
+        numberGenerator.addObserver(digitObserver);
+        numberGenerator.addObserver(graphObserver);
+        numberGenerator.execute();
+
+        System.out.println("===========================");
+
+        NumberGenerator oddNumberGenerator = new OddNumberGenerator();
+        oddNumberGenerator.addObserver(digitObserver);
+        oddNumberGenerator.addObserver(graphObserver);
+        oddNumberGenerator.execute();
+
+    }
+}
+```
+
+*결과*
+
+```
+DigitObserver:15
+GraphObserver:***************
+DigitObserver:32
+GraphObserver:********************************
+DigitObserver:28
+GraphObserver:****************************
+DigitObserver:4
+GraphObserver:****
+DigitObserver:13
+GraphObserver:*************
+DigitObserver:19
+GraphObserver:*******************
+DigitObserver:15
+GraphObserver:***************
+DigitObserver:47
+GraphObserver:***********************************************
+DigitObserver:40
+GraphObserver:****************************************
+DigitObserver:32
+GraphObserver:********************************
+DigitObserver:39
+GraphObserver:***************************************
+DigitObserver:13
+GraphObserver:*************
+DigitObserver:38
+GraphObserver:**************************************
+DigitObserver:8
+GraphObserver:********
+DigitObserver:37
+GraphObserver:*************************************
+DigitObserver:24
+GraphObserver:************************
+DigitObserver:30
+GraphObserver:******************************
+DigitObserver:23
+GraphObserver:***********************
+DigitObserver:11
+GraphObserver:***********
+DigitObserver:13
+GraphObserver:*************
+===========================
+DigitObserver:1
+GraphObserver:*
+DigitObserver:3
+GraphObserver:***
+DigitObserver:5
+GraphObserver:*****
+DigitObserver:7
+GraphObserver:*******
+DigitObserver:9
+GraphObserver:*********
+DigitObserver:11
+GraphObserver:***********
+DigitObserver:13
+GraphObserver:*************
+DigitObserver:15
+GraphObserver:***************
+DigitObserver:17
+GraphObserver:*****************
+DigitObserver:19
+GraphObserver:*******************
+DigitObserver:21
+GraphObserver:*********************
+DigitObserver:23
+GraphObserver:***********************
+DigitObserver:25
+GraphObserver:*************************
+DigitObserver:27
+GraphObserver:***************************
+DigitObserver:29
+GraphObserver:*****************************
+DigitObserver:31
+GraphObserver:*******************************
+DigitObserver:33
+GraphObserver:*********************************
+DigitObserver:35
+GraphObserver:***********************************
+DigitObserver:37
+GraphObserver:*************************************
+DigitObserver:39
+GraphObserver:***************************************
+DigitObserver:41
+GraphObserver:*****************************************
+DigitObserver:43
+GraphObserver:*******************************************
+DigitObserver:45
+GraphObserver:*********************************************
+DigitObserver:47
+GraphObserver:***********************************************
+DigitObserver:49
+GraphObserver:*************************************************
+```
