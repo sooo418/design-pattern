@@ -2422,3 +2422,307 @@ Super level 입니다.
 아주 높이 Jump 합니다.
 한 바퀴 돕니다.
 ```
+
+# Facade
+
+## 디자인 원리
+
+- 간단한 창구
+- 서브 시스템이 여러 개인 경우 이를 통합한 하나의 인터페이스를 제공
+- 서브 시스템을 좀 더 편하게 이용하기 위한 높은 수준의 인터페이스를 정의
+- 각 서브 시스템의 역할이나 의존 관계를 내부에서 올바른 순서로 사용할 수 있도록 외부에는 간단한 인터페이스만을 오픈
+- 클라이언트와 서브 시스템 간의 결합도를 줄임
+
+![](image/img_7.png)
+
+- EX) 컴파일러
+
+![](image/img_8.png)
+
+- 최소 지식 원칙 : 가장 친한 친구에게만 이야기 한다.
+
+객체가 서로 상호 작용하는 개수와 방식에 주의를 해야 함
+
+여러 클래스가 복잡하게 얽히지 않고 의존 관계를 적게 해야 수정을 할 때 side effect나 연관 수정이 발생하지 않음
+- 객체 자체
+- 메소드의 매개 변수로 전달된 객체
+- 메소드를 생성하거나 인스턴스를 만들 객체
+- 객체에 속하는 구성 요소
+
+안 좋은 예
+
+```java
+public float getTemp() {
+    Thermometer thermometer = station.getThermometer();
+    return thermometer.getTemperature();
+}
+```
+
+좋은 예
+
+```java
+public float getTemp() {
+    return station.getTemperature();
+}
+```
+
+# Mediator
+
+## 디자인 원리
+
+- 여러 객체(colleague) 상호 간의 작용이 많고, 이 작용들이 다른 colleague에도 영향을 주는 경우 사용
+- UI 프로그래밍에서 많이 사용되는 방식으로 widget 상호 간에 주고 받을 메세지를 각 widget이 주고 받는 것이 아닌 한 객체(mediator)가 전담하여 처리하도록 하는 방법
+- 객체 지향 방법론에서는 객체의 관련된 처리를 객체 내부에서 하는 것이 맞지만, 그런 경우에 상호 작용이 급증하게 된다면 코드의 수정이 어렵다.
+- Mediator 객체가 상호 작용을 제어하고 조율하게 함. 각 객체는 다른 객체의 참조자는 알 필요 없고 Mediator만 알면 되므로 colleague 간의 종속성이 약화되고 결합도가 줄어듬
+- **N:N의 관계를 1:N의 관계로 바꿀 수 있음 (counselor)**
+
+## 클래스 다이어그램
+
+![](image/img_9.png)
+
+![](image/img_10.png)
+
+## 예제)
+
+*Mediator.java*
+
+```java
+package mediator;
+
+public interface Mediator {
+    public abstract void createColleagues();
+
+    public abstract void colleagueChanged(Colleague colleague);
+}
+```
+
+*Colleague.java*
+
+```java
+package mediator;
+
+public interface Colleague {
+    public abstract void setMediator(Mediator mediator);
+
+    public abstract void setColleagueEnabled(boolean enabled);
+}
+```
+
+*ColleagueCheckbox.java*
+
+```java
+package mediator;
+
+import java.awt.*;
+import java.awt.event.ItemEvent;
+import java.awt.event.ItemListener;
+
+public class ColleagueCheckbox extends Checkbox implements ItemListener, Colleague {
+    private Mediator mediator;
+    public ColleagueCheckbox(String caption, CheckboxGroup group, boolean state) throws HeadlessException {
+        super(caption, group, state);
+    }
+
+    @Override
+    public void itemStateChanged(ItemEvent e) {
+        mediator.colleagueChanged(this);
+    }
+
+    @Override
+    public void setMediator(Mediator mediator) {
+        this.mediator = mediator;
+    }
+
+    @Override
+    public void setColleagueEnabled(boolean enabled) {
+        setEnabled(enabled);
+    }
+}
+```
+
+*ColleagueTextField.java*
+
+```java
+package mediator;
+
+import java.awt.*;
+import java.awt.event.TextEvent;
+import java.awt.event.TextListener;
+
+public class ColleagueTextField extends TextField implements TextListener, Colleague {
+    private Mediator mediator;
+
+    public ColleagueTextField(String text, int columns) {
+        super(text, columns);
+    }
+
+    @Override
+    public void textValueChanged(TextEvent e) {
+        mediator.colleagueChanged(this);
+    }
+
+    @Override
+    public void setMediator(Mediator mediator) {
+        this.mediator = mediator;
+    }
+
+    @Override
+    public void setColleagueEnabled(boolean enabled) {
+        setEnabled(enabled);
+        setBackground(enabled ? Color.white : Color.LIGHT_GRAY);
+    }
+}
+```
+
+*ColleagueButton.java*
+
+```java
+package mediator;
+
+import java.awt.*;
+
+public class ColleagueButton extends Button implements Colleague {
+    private Mediator mediator;
+
+    public ColleagueButton(String caption) {
+        super(caption);
+    }
+
+    @Override
+    public void setMediator(Mediator mediator) {
+        this.mediator = mediator;
+    }
+
+    @Override
+    public void setColleagueEnabled(boolean enabled) {
+        setEnabled(enabled);
+    }
+}
+```
+
+*LoginFrame.java*
+
+```java
+package mediator;
+
+import java.awt.*;
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
+
+public class LoginFrame extends Frame implements ActionListener, Mediator {
+    private ColleagueCheckbox checkGuest;
+    private ColleagueCheckbox checkLogin;
+    private ColleagueTextField textUser;
+    private ColleagueTextField textPass;
+    private ColleagueButton buttonOk;
+    private ColleagueButton buttonCancel;
+
+    public LoginFrame(String title) {
+        super(title);
+        setBackground(Color.LIGHT_GRAY);
+        setLayout(new GridLayout(4, 2));
+        createColleagues();
+
+        add(checkGuest);
+        add(checkLogin);
+        add(new Label("Username:"));
+        add(textUser);
+        add(new Label("Password:"));
+        add(textPass);
+        add(buttonOk);
+        add(buttonCancel);
+
+        colleagueChanged(checkGuest);
+        pack();
+        show();
+    }
+
+    @Override
+    public void createColleagues() {
+        CheckboxGroup g = new CheckboxGroup();
+        checkGuest = new ColleagueCheckbox("Guest", g, true);
+        checkLogin = new ColleagueCheckbox("Login", g, false);
+        textUser = new ColleagueTextField("", 10);
+        textPass = new ColleagueTextField("", 10);
+        textPass.setEchoChar('*');
+        buttonOk = new ColleagueButton("OK");
+        buttonCancel = new ColleagueButton("Cancel");
+
+        checkGuest.setMediator(this);
+        checkLogin.setMediator(this);
+        textUser.setMediator(this);
+        textPass.setMediator(this);
+        buttonOk.setMediator(this);
+        buttonCancel.setMediator(this);
+
+        checkGuest.addItemListener(checkGuest);
+        checkLogin.addItemListener(checkLogin);
+        textUser.addTextListener(textUser);
+        textPass.addTextListener(textPass);
+        buttonOk.addActionListener(this);
+        buttonCancel.addActionListener(this);
+    }
+
+    @Override
+    public void colleagueChanged(Colleague colleague) {
+        if (colleague == checkGuest || colleague == checkLogin) {
+            if (checkGuest.getState()) {
+                textUser.setColleagueEnabled(false);
+                textPass.setColleagueEnabled(false);
+                buttonOk.setColleagueEnabled(true);
+            } else {
+                textUser.setColleagueEnabled(true);
+                userpassChanged();
+            }
+        } else if (colleague == textUser || colleague == textPass) {
+            userpassChanged();
+        } else {
+            System.out.println("colleagueChanged:unknown colleague = " + colleague);
+        }
+    }
+
+    @Override
+    public void actionPerformed(ActionEvent e) {
+        System.out.println("" + e);
+        System.exit(0);
+    }
+
+    private void userpassChanged() {
+        if (textUser.getText().length() > 0) {
+            textPass.setColleagueEnabled(true);
+            if (textPass.getText().length() > 0) {
+                buttonOk.setColleagueEnabled(true);
+            } else {
+                buttonOk.setColleagueEnabled(false);
+            }
+        } else {
+            textPass.setColleagueEnabled(false);
+            buttonOk.setColleagueEnabled(false);
+        }
+    }
+}
+```
+
+*Main.java*
+
+```java
+package mediator;
+
+public class Main {
+    public static void main(String[] args) {
+        new LoginFrame("Mediator Sample");
+    }
+}
+```
+
+*실행*
+
+![](image/img_11.png)
+
+Guest 체크 박스를 선택 시 입력 칸이 비활성화 되고 OK, Cancel 버튼은 활성화
+
+![](image/img_12.png)
+
+1. Login 체크 박스를 선택 시 Username 입력 칸이 활성화 되고 OK 버튼은 비활성화
+2. Username에 값 입력 시 Password 입력 칸 활성화
+3. Password에 값 입력 시 OK 버튼 활성화
