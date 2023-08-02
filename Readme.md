@@ -2726,3 +2726,339 @@ Guest 체크 박스를 선택 시 입력 칸이 비활성화 되고 OK, Cancel �
 1. Login 체크 박스를 선택 시 Username 입력 칸이 활성화 되고 OK 버튼은 비활성화
 2. Username에 값 입력 시 Password 입력 칸 활성화
 3. Password에 값 입력 시 OK 버튼 활성화
+
+# Iterator
+
+## 디자인 원리
+
+- 객체의 내부 구현을 외부로 노출하지 않고 집합체(Aggregate)의 모든 항목에 대한 접근이 가능하게 설계
+- 여러 리스트에 대해 동일한 방식으로 순회 할 수 있는 인터페이스와 기능을 제공
+- 집합체는 순회에 대한 구현을 하지 않아도 됨
+- **단일 역할의 법칙**
+  어떤 클래스가 하나 이상의 역할을 제공하게 되면 변경이 되는 이유도 하나 이상이 된다. 클래스가 변경되는 이유는 하나뿐이어야 한다.
+  집합체가 순회에 대한 구현까지 한다면 집합체의 기능과 순회 두 가지 기능을 가지게 되는 것
+- java.util.Iterator
+
+![](image/img_13.png)
+
+- Iterator : 집합체 객체 외부에 순회하는 방법을 구현해 놓은 객체
+- 집합체는 자기 자신의 Iterator 객체를 얻기 위해 CreateIterator() 기능을 제공해야 한다.
+  `return new ConcreteIterator(this)`
+- 캡슐화
+  구체적인 클래스에 종속되지 않고 인터페이스 기반으로 프로그래밍을 할 수 있다.
+
+## 예제)
+
+*Iterator.java*
+
+```java
+package iterator;
+
+public interface Iterator {
+
+    boolean hasNext();
+
+    Object next();
+}
+```
+
+*Aggregate.java*
+
+```java
+package iterator;
+
+public interface Aggregate {
+
+    int getLength();
+
+    Iterator iterator();
+}
+```
+
+*Book.java*
+
+```java
+package iterator;
+
+public class Book {
+
+    private String name;
+
+    public Book(String name) {
+        this.name = name;
+    }
+
+    public String getName() {
+        return name;
+    }
+}
+```
+
+*BookShelf.java*
+
+```java
+package iterator;
+
+public class BookShelf implements Aggregate {
+
+    private Book[] books;
+    private int last = 0;
+
+    public BookShelf(int maxSize) {
+        this.books = new Book[maxSize];
+    }
+
+    public void appendBook(Book book) {
+        books[last] = book;
+        last++;
+    }
+
+    public Book getAt(int index) {
+        return books[index];
+    }
+
+    @Override
+    public int getLength() {
+        return last;
+    }
+
+    @Override
+    public Iterator iterator() {
+        return new BookShelfIterator(this);
+    }
+}
+```
+
+*BookShelfIterator.java*
+
+```java
+package iterator;
+
+import java.util.ArrayList;
+
+public class BookShelfIterator implements Iterator {
+
+    private BookShelf list;
+    private int index = 0;
+
+    public BookShelfIterator(Aggregate list) {
+        this.list = (BookShelf) list;
+    }
+
+    @Override
+    public boolean hasNext() {
+        if (index < list.getLength()) {
+            return true;
+        }
+        return false;
+    }
+
+    @Override
+    public Object next() {
+        Book book = list.getAt(index);
+        index++;
+        return book;
+    }
+
+}
+```
+
+*Main.java*
+
+```java
+package iterator;
+
+public class Main {
+
+    public static void main(String[] args) {
+        BookShelf bookShelf = new BookShelf(10);
+        bookShelf.appendBook(new Book("Around the World in 80 Days"));
+        bookShelf.appendBook(new Book("Bible"));
+        bookShelf.appendBook(new Book("Cinderella"));
+        bookShelf.appendBook(new Book("Daddy-Long-Legs"));
+
+        Iterator ir = bookShelf.iterator();
+        while (ir.hasNext()) {
+            Book book = (Book) ir.next();
+            System.out.println(book.getName());
+        }
+    }
+}
+```
+
+*결과*
+
+```
+Around the World in 80 Days
+Bible
+Cinderella
+Daddy-Long-Legs
+```
+
+## Iterator 기능에 추가 기능이 필요할 때
+
+- 역순으로 순회하는 기능을 구현하자 ReverseIterator
+- 다양한 Iterator를 만드는 factory 구현
+
+*Factory.java*
+
+```java
+package iterator.factory;
+
+public abstract class Factory {
+
+    public final Iterator create(Aggregate list, int type) {
+
+        Iterator p = createProduct(list, type);
+        return p;
+    }
+
+    public abstract Iterator createProduct(Aggregate list, int type);
+}
+```
+
+*IteratorFactory.java*
+
+```java
+package iterator.factory;
+
+public class IteratorFactory extends Factory {
+
+    private static IteratorFactory iteratorFactory = new IteratorFactory();
+    private IteratorFactory() {
+
+    }
+
+    public static IteratorFactory getInstance() {
+
+        if (iteratorFactory == null) {
+            iteratorFactory = new IteratorFactory();
+        }
+
+        return iteratorFactory;
+    }
+
+    @Override
+    public Iterator createProduct(Aggregate list, int type) {
+        if (type == Iterator.FORWARD) {
+            return new BookShelfIterator(list);
+        } else if (type == Iterator.REVERSE) {
+            return new ReverseShelfIterator(list);
+        }
+        return null;
+    }
+}
+```
+
+*ReverseShelfIterator.java*
+
+```java
+package iterator.factory;
+
+public class ReverseShelfIterator implements Iterator {
+
+    private BookShelf list;
+    private int index;
+
+    public ReverseShelfIterator(Aggregate list) {
+        this.list = (BookShelf) list;
+        index = list.getLength() - 1;
+    }
+
+    @Override
+    public boolean hasNext() {
+        if (index >= 0) {
+            return true;
+        }
+        return false;
+    }
+
+    @Override
+    public Object next() {
+        if (index >= 0) {
+            Book book = list.getAt(index);
+            index--;
+            return book;
+        }
+        return null;
+    }
+}
+```
+
+*Iterator.java*
+
+```java
+package iterator.factory;
+
+public interface Iterator {
+
+    public static final int FORWARD = 0;
+    public static final int REVERSE = 1;
+
+    boolean hasNext();
+
+    Object next();
+}
+```
+
+상태 값 추가
+
+*Aggregate.java*
+
+```java
+package iterator.factory;
+
+public interface Aggregate {
+
+    int getLength();
+
+    Iterator iterator(int type);
+}
+```
+
+`iterator()` method의 파라미터 추가
+
+*Main.java*
+
+```java
+package iterator.factory;
+
+public class Main {
+
+    public static void main(String[] args) {
+        BookShelf bookShelf = new BookShelf(10);
+        bookShelf.appendBook(new Book("Around the World in 80 Days"));
+        bookShelf.appendBook(new Book("Bible"));
+        bookShelf.appendBook(new Book("Cinderella"));
+        bookShelf.appendBook(new Book("Daddy-Long-Legs"));
+
+        Iterator ir = bookShelf.iterator(Iterator.FORWARD);
+        while (ir.hasNext()) {
+            Book book = (Book) ir.next();
+            System.out.println(book.getName());
+        }
+
+        System.out.println("===================================");
+
+        Iterator reverse = bookShelf.iterator(Iterator.REVERSE);
+        while (reverse.hasNext()) {
+            Book book = (Book) reverse.next();
+            System.out.println(book.getName());
+        }
+    }
+}
+```
+
+*결과*
+
+```
+Around the World in 80 Days
+Bible
+Cinderella
+Daddy-Long-Legs
+===================================
+Daddy-Long-Legs
+Cinderella
+Bible
+Around the World in 80 Days
+```
