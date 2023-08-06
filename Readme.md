@@ -3062,3 +3062,265 @@ Cinderella
 Bible
 Around the World in 80 Days
 ```
+
+# Visitor
+
+## 디자인 원리
+
+- 클래스에 다양한 기능이 추가 되거나 삭제되는 일이 자주 일어나면 클래스를 자주 변경해야 하는 번거로움이 있다.
+- 객체가 가지는 기능들을 클래스로 분리한다.
+- 기능을 구현한 클래스를 Visitor라고 하고 각 객체는 이 Visitor를 accept 함으로써 기능이 수행된다.
+- 모든 클래스에 적용하기 위한 기능을 추가할 때는 각 클래스를 수정하지 않고 Visitor를 추가하면 되지만, 클래스의 캡슐화에 위배되는 구현 방식이므로 클래스의 캡슐화가 크게 중요하지 않는 경우에 적용해야 하는 패턴임
+- 따라서 클래스 구조의 변화는 거의 없고 기능의 추가 삭제가 자주 발생할 때 사용하는 것이 좋음
+- 복합 객체인 경우 단일 객체와 동일한 기능이 구현될 때 이를  Visitor로 분리하고 Visitor가 각 객체를 순회하는 방식으로 사용할 수 있음
+
+## 추상 구문 트리 예
+
+![](image/img_14.png)
+
+- 문법적 처리를 위해 각 노드마다 수행해야 하는 기능을 따로 정의해야 함
+- 유사한 오퍼레이션들이 여러 객체에 분산되어 있어서 디버깅이 어렵고 가독성이 떨어짐
+- 각 클래스에서 유사한 오퍼레이션들을 클래스로 따로 모아 Visitor를 만든다.
+
+![](image/img_15.png)
+
+- 각 노드 클래스는 visitor가 방문하면 accept 하여 해당 노드에 대한 기능이 수행되도록 함
+
+![](image/img_16.png)
+
+## 프로그램 예제
+
+*Acceptor.java*
+
+```java
+package visitor;
+
+public interface Acceptor {
+    public abstract void accept(Visitor visitor);
+}
+```
+
+*Entry.java*
+
+```java
+package visitor;
+
+import java.util.Iterator;
+
+public abstract class Entry implements Acceptor {
+    public abstract String getName();
+
+    public abstract int getSize();
+
+    public Entry add(Entry entry) throws UnsupportedOperationException {
+        throw new UnsupportedOperationException();
+    }
+
+    public Iterator iterator() throws UnsupportedOperationException {
+        throw new UnsupportedOperationException();
+    }
+
+    public String toString() {
+        return getName() + " (" + getSize() + ")";
+    }
+
+}
+```
+
+*File.java*
+
+```java
+package visitor;
+
+public class File extends Entry {
+
+    private String name;
+    private int size;
+
+    public File(String name, int size) {
+        this.name = name;
+        this.size = size;
+    }
+
+    @Override
+    public String getName() {
+        return name;
+    }
+
+    @Override
+    public int getSize() {
+        return size;
+    }
+
+    @Override
+    public void accept(Visitor visitor) {
+        visitor.visit(this);
+    }
+}
+```
+
+*Directory.java*
+
+```java
+package visitor;
+
+import java.util.ArrayList;
+import java.util.Iterator;
+
+public class Directory extends Entry {
+
+    private String name;
+    private ArrayList<Entry> dir = new ArrayList<>();
+
+    public Directory(String name) {
+        this.name = name;
+    }
+
+    @Override
+    public String getName() {
+        return name;
+    }
+
+    @Override
+    public int getSize() {
+        int size = 0;
+        Iterator<Entry> it = dir.iterator();
+        while (it.hasNext()) {
+            Entry entry = (Entry) it.next();
+            size += entry.getSize();
+        }
+        return size;
+    }
+
+    public Entry add(Entry entry) {
+        dir.add(entry);
+        return this;
+    }
+
+    public Iterator<Entry> iterator() {
+        return dir.iterator();
+    }
+
+    @Override
+    public void accept(Visitor visitor) {
+        visitor.visit(this);
+    }
+}
+```
+
+*Visitor.java*
+
+```java
+package visitor;
+
+public abstract class Visitor {
+
+    public abstract void visit(File f);
+    public abstract void visit(Directory dir);
+}
+```
+
+*ListVisitor.java*
+
+```java
+package visitor;
+
+import java.util.Iterator;
+
+public class ListVisitor extends Visitor {
+
+    private String currentDir = "/";
+
+    @Override
+    public void visit(File f) {
+
+        System.out.println(currentDir + "/" + f);
+
+    }
+
+    @Override
+    public void visit(Directory dir) {
+
+        System.out.println(currentDir + "/" + dir);
+
+        String saveDir = currentDir;
+        currentDir = currentDir + "/" + dir.getName();
+        Iterator<Entry> ir = dir.iterator();
+
+        while (ir.hasNext()) {
+            Entry entry = ir.next();
+            entry.accept(this);
+        }
+
+        currentDir = saveDir;
+    }
+}
+```
+
+*Main.java*
+
+```java
+package visitor;
+
+public class Main {
+    public static void main(String[] args) {
+        System.out.println("Making root entries...");
+        Directory rootDir = new Directory("root");
+        Directory binDir = new Directory("bin");
+        Directory tmpDir = new Directory("tmp");
+        Directory usrDir = new Directory("usr");
+        rootDir.add(binDir);
+        rootDir.add(tmpDir);
+        rootDir.add(usrDir);
+        binDir.add(new File("vi", 10000));
+        binDir.add(new File("latex", 20000));
+        rootDir.accept(new ListVisitor());
+
+        System.out.println("");
+        System.out.println("Making user entries...");
+
+        Directory Kim = new Directory("Kim");
+        Directory Lee = new Directory("Lee");
+        Directory Kang = new Directory("Kang");
+        usrDir.add(Kim);
+        usrDir.add(Lee);
+        usrDir.add(Kang);
+        Kim.add(new File("diary.html", 100));
+        Kim.add(new File("Composite.java", 200));
+        Lee.add(new File("memo.tex", 300));
+        Kang.add(new File("game.doc", 400));
+        Kang.add(new File("junk.mail", 500));
+        rootDir.accept(new ListVisitor());
+    }
+}
+```
+
+*결과*
+
+```
+Making root entries...
+//root (30000)
+//root/bin (30000)
+//root/bin/vi (10000)
+//root/bin/latex (20000)
+//root/tmp (0)
+//root/usr (0)
+
+Making user entries...
+//root (31500)
+//root/bin (30000)
+//root/bin/vi (10000)
+//root/bin/latex (20000)
+//root/tmp (0)
+//root/usr (1500)
+//root/usr/Kim (300)
+//root/usr/Kim/diary.html (100)
+//root/usr/Kim/Composite.java (200)
+//root/usr/Lee (300)
+//root/usr/Lee/memo.tex (300)
+//root/usr/Kang (900)
+//root/usr/Kang/game.doc (400)
+//root/usr/Kang/junk.mail (500)
+```
+
+- Visitor 패턴은 정말 필요할 때 쓰는 게 좋으며 Composite 패턴과 같이 써야 효과적이다.
