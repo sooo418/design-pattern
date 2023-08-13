@@ -3494,3 +3494,150 @@ proxy : setPrinterName()
 proxy : getPrinterName()
 현재의 이름은Tomas입니다.
 ```
+
+# Adapter
+
+## 디자인 원리
+
+- 서로 다른 인터페이스를 연결함
+- 이미 사용중이거나 정의된 인터페이스를 변경하지 않고 기존에 사용하던 대로 사용할 수 있도록 Adapter 객체를 제공
+- 클라이언트가 사용하던 방식대로 호출하여 사용할 수 있도록 조정해줌
+- 예) 안드로이드의 ListView를 만들 때 사용되는 Adapter - 실제 Item 과 View를 연결해주는 기능
+
+## 클래스 다이어그램
+
+- 합성( composition )으로 구현하기
+
+![](image/img_18.png)
+
+- 상속( inheritance )으로 구현하기
+
+![](image/img_19.png)
+
+- 기능을 제공하는 클래스는 Adaptee이다.
+- 클라이언트는 Target을 참조한다.
+- Adaptee 클래스는 여러 개 있을 수 있고 Adapter를 통해 사용할 수 있다.
+
+## 프로그램 예제
+
+*Print.java*
+
+```java
+package adapter;
+
+public interface Print {
+
+    void printWeak();
+
+    void printStrong();
+}
+```
+
+*Banner.java*
+
+```java
+package adapter;
+
+public class Banner {
+
+    private String string;
+
+    public Banner(String string) {
+        this.string = string;
+    }
+
+    public void showWithParen() {
+        System.out.println("(" + string + ")");
+    }
+
+    public void showWithAster() {
+        System.out.println("**" + string + "**");
+    }
+}
+```
+
+*PrintBanner.java*
+
+```java
+package adapter;
+
+public class PrintBanner implements Print {
+
+    private Banner banner;
+
+    public PrintBanner(String string) {
+        banner = new Banner(string);
+    }
+
+    @Override
+    public void printWeak() {
+        banner.showWithParen();
+    }
+
+    @Override
+    public void printStrong() {
+        banner.showWithAster();
+    }
+}
+```
+
+*Main.java*
+
+```java
+package adapter;
+
+public class Main {
+
+    public static void main(String[] args) {
+        Print p = new PrintBanner("Hello, World");
+        p.printWeak();
+        p.printStrong();
+    }
+}
+```
+
+*결과*
+
+```
+(Hello, World)
+**Hello, World**
+```
+
+## 예제 - 2 Iterator 와 Enumeration
+
+- Collection을 접근하는데 사용하는 인터페이스
+- Enumeration이 이미 사용되고 있다면 Iterator 인터페이스의 메서드로 바꾸자
+- EnumerationIterator 어댑터 만들기
+
+*EnumerationIterator.java*
+
+```java
+package adapter;
+
+import java.util.Enumeration;
+import java.util.Iterator;
+
+public class EnumerationIterator implements Iterator<Object> {
+    
+    Enumeration<?> enumeration;
+
+    public EnumerationIterator(Enumeration<?> enumeration) {
+        this.enumeration = enumeration;
+    }
+
+    @Override
+    public boolean hasNext() {
+        return enumeration.hasMoreElements();
+    }
+
+    @Override
+    public Object next() {
+        return enumeration.nextElement();
+    }
+
+    @Override
+    public void remove() {
+        throw new UnsupportedOperationException();
+    }
+}
+```
